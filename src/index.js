@@ -22,13 +22,15 @@ class Card extends React.Component {
       'left'
     ]),
     style: PropTypes.object,
-    closeFunc: PropTypes.func
+    closeFunc: PropTypes.func,
+    fullWidth: PropTypes.bool
   }
   static defaultProps = {
     active: false,
     position: 'right',
     arrow: null,
-    style: {style: {}, arrowStyle: {}}
+    style: {style: {}, arrowStyle: {}},
+    fullWidth: false
   }
   state = {
     hover: false,
@@ -36,7 +38,7 @@ class Card extends React.Component {
     width: 0,
     height: 0
   }
-  margin = 15
+  margin = 20
   defaultArrowStyle = {
     color: '#fff',
     borderColor: 'rgba(0,0,0,.4)'
@@ -99,15 +101,15 @@ class Card extends React.Component {
       bgStyle.marginTop = -8
 
       if (position === 'left') {
-        fgStyle.right = -10
+        fgStyle.right = -15
         fgStyle.borderLeft = fgColorBorder
-        bgStyle.right = -11
+        bgStyle.right = -16
         bgStyle.borderLeft = bgColorBorder
       }
       else {
-        fgStyle.left = -10
+        fgStyle.left = -15
         fgStyle.borderRight = fgColorBorder
-        bgStyle.left = -11
+        bgStyle.left = -16
         bgStyle.borderRight = bgColorBorder
       }
 
@@ -124,24 +126,24 @@ class Card extends React.Component {
     }
     else {
       fgStyle.left = '50%'
-      fgStyle.marginLeft = -10
+      fgStyle.marginLeft = -15
       fgStyle.borderLeft = fgTransBorder
       fgStyle.borderRight = fgTransBorder
       bgStyle.left = '50%'
-      bgStyle.marginLeft = -11
+      bgStyle.marginLeft = -16
       bgStyle.borderLeft = bgTransBorder
       bgStyle.borderRight = bgTransBorder
 
       if (position === 'top') {
-        fgStyle.bottom = -10
+        fgStyle.bottom = -15
         fgStyle.borderTop = fgColorBorder
-        bgStyle.bottom = -11
+        bgStyle.bottom = -16
         bgStyle.borderTop = bgColorBorder
       }
       else {
-        fgStyle.top = -10
+        fgStyle.top = -15
         fgStyle.borderBottom = fgColorBorder
-        bgStyle.top = -11
+        bgStyle.top = -16
         bgStyle.borderBottom = bgColorBorder
       }
 
@@ -184,6 +186,7 @@ class Card extends React.Component {
     let scrollX = (window.scrollX !== undefined) ? window.scrollX : window.pageXOffset
     let top = scrollY + tooltipPosition.top
     let left = scrollX + tooltipPosition.left
+    let right = window.innerWidth - tooltipPosition.right + scrollX
     let style = {}
 
     const stylesFromPosition = {
@@ -197,6 +200,7 @@ class Card extends React.Component {
       },
       top: () => {
         style.left = left - this.state.width / 2 + parent.offsetWidth / 2
+        style.right = right - this.margin
         style.top = top - this.state.height - this.margin
       },
       bottom: () => {
@@ -227,6 +231,15 @@ class Card extends React.Component {
   }
   checkWindowPosition(style, arrowStyle) {
     if (this.props.position === 'top' || this.props.position === 'bottom') {
+
+      if (this.props.fullWidth) {
+        style.left = this.margin
+        style.right = this.margin
+        style.width = 'auto'
+
+        return {style, arrowStyle}
+      }
+
       if (style.left < 0) {
         let offset = style.left
         style.left = this.margin
@@ -289,20 +302,20 @@ var portalNodes = {}
 
 export default class ToolTip extends React.Component {
   static propTypes = {
-    parent: PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.object
-    ]).isRequired,
+    parent: PropTypes.string.isRequired,
     active: PropTypes.bool,
     group: PropTypes.string,
     tooltipTimeout: PropTypes.number,
     closeFunc: PropTypes.func,
-    onAfterOpen: PropTypes.func
+    onAfterOpen: PropTypes.func,
+    scrollHide: PropTypes.bool,
+    fullWidth: PropTypes.bool
   }
   static defaultProps = {
     active: false,
     group: 'main',
-    tooltipTimeout: 500
+    tooltipTimeout: 500,
+    fullWidth: false
   }
 
   state = {
@@ -321,6 +334,7 @@ export default class ToolTip extends React.Component {
           }
           if (root) {
             root.addEventListener('click', this.handleInClick, true);
+            props.scrollHide && root.addEventListener('scroll', this.props.closeFunc, true);
           }
         }
         this.root = root;
@@ -345,6 +359,7 @@ export default class ToolTip extends React.Component {
         }
       }
       document.addEventListener('click', this.handleOutClick, true);
+      props.scrollHide && document.addEventListener('scroll', this.props.closeFunc, true);
     }
   }
 
@@ -382,8 +397,10 @@ export default class ToolTip extends React.Component {
     if (canUseDOM) {
       if (this.root) {
         this.root.removeEventListener('click', this.handleInClick);
+        this.root.removeEventListener('scroll', this.props.closeFunc);
       }
       document.removeEventListener('click', this.handleOutClick);
+      document.removeEventListener('scroll', this.props.closeFunc);
     }
   }
 
@@ -402,11 +419,11 @@ export default class ToolTip extends React.Component {
     }
     let {parent, ...other} = props
     const node = portalNodes[this.props.group].node
-    let parentEl = typeof parent === 'string' ? document.querySelector(parent) : parent
-    renderSubtreeIntoContainer(this, <Card parentEl={parentEl} {...other}/>, node)
+    let parentEl = document.querySelector(parent)
+    renderSubtreeIntoContainer(this, <Card parentEl={document.querySelector(parent)} {...other}/>, portalNodes[this.props.group].node)
 
     if (node && props.active && !this.state.onAfterOpen) {
-        this.props.onAfterOpen(node.querySelector('div').getBoundingClientRect().height)
+	    this.props.onAfterOpen && this.props.onAfterOpen(node.querySelector('div').getBoundingClientRect().height)
 
         this.setState({
           onAfterOpen : true

@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ReactDOM, {unstable_renderSubtreeIntoContainer as renderSubtreeIntoContainer} from 'react-dom'
 import assign from 'object-assign'
+import { canUseDOM } from 'exenv'
 
 class Card extends React.Component {
   static propTypes = {
@@ -20,7 +21,8 @@ class Card extends React.Component {
       'bottom',
       'left'
     ]),
-    style: PropTypes.object
+    style: PropTypes.object,
+    closeFunc: PropTypes.func
   }
   static defaultProps = {
     active: false,
@@ -293,13 +295,59 @@ export default class ToolTip extends React.Component {
     ]).isRequired,
     active: PropTypes.bool,
     group: PropTypes.string,
-    tooltipTimeout: PropTypes.number
+    tooltipTimeout: PropTypes.number,
+    closeFunc: PropTypes.func,
+    onAfterOpen: PropTypes.func
   }
   static defaultProps = {
     active: false,
     group: 'main',
     tooltipTimeout: 500
   }
+
+  state = {
+    onAfterOpen: false
+  }
+
+  constructor(props, context) {
+    super(props, context)
+
+    if (canUseDOM) {
+      this.root = null;
+      this.handleRootRef = (root) => {
+        if (root !== this.root) {
+          if (this.root) {
+            this.root.removeEventListener('click', this.handleInClick);
+          }
+          if (root) {
+            root.addEventListener('click', this.handleInClick, true);
+          }
+        }
+        this.root = root;
+      };
+
+      this.isInClick = false;
+      this.handleInClick = () => {
+         this.isInClick = true;
+       }
+
+      this.handleOutClick = (event) => {
+        const isOutClick = !this.isInClick && event.target !== document.querySelector(this.props.parent);
+        this.isInClick = false;
+
+
+        const { closeFunc } = this.props;
+        if (isOutClick && typeof closeFunc === 'function') {
+          closeFunc();
+          this.setState({
+            onAfterOpen: false
+          })
+        }
+      }
+      document.addEventListener('click', this.handleOutClick, true);
+    }
+  }
+
   componentDidMount() {
     if (!this.props.active) {
       return
@@ -313,35 +361,39 @@ export default class ToolTip extends React.Component {
       return
     }
 
-    let props = assign({}, nextProps)
-    let newProps = assign({}, nextProps)
-
     if (portalNodes[this.props.group] && portalNodes[this.props.group].timeout) {
       clearTimeout(portalNodes[this.props.group].timeout)
     }
 
-    if (this.props.active && !props.active) {
-      newProps.active = true
+    if (this.props.active && !nextProps.active) {
       portalNodes[this.props.group].timeout = setTimeout(() => {
-        props.active = false
-        this.renderPortal(props)
+        this.renderPortal(nextProps)
       }, this.props.tooltipTimeout)
+    } else {
+        this.renderPortal(nextProps)
     }
-
-    this.renderPortal(newProps)
   }
   componentWillUnmount() {
     if (portalNodes[this.props.group]) {
       ReactDOM.unmountComponentAtNode(portalNodes[this.props.group].node)
       clearTimeout(portalNodes[this.props.group].timeout)
     }
+
+    if (canUseDOM) {
+      if (this.root) {
+        this.root.removeEventListener('click', this.handleInClick);
+      }
+      document.removeEventListener('click', this.handleOutClick);
+    }
   }
+
   createPortal() {
     portalNodes[this.props.group] = {
       node: document.createElement('div'),
       timeout: false
     }
     portalNodes[this.props.group].node.className = 'ToolTipPortal'
+    portalNodes[this.props.group].node.ref = this.handleRootRef
     document.body.appendChild(portalNodes[this.props.group].node)
   }
   renderPortal(props) {
@@ -349,9 +401,19 @@ export default class ToolTip extends React.Component {
       this.createPortal()
     }
     let {parent, ...other} = props
+    const node = portalNodes[this.props.group].node
     let parentEl = typeof parent === 'string' ? document.querySelector(parent) : parent
-    renderSubtreeIntoContainer(this, <Card parentEl={parentEl} {...other}/>, portalNodes[this.props.group].node)
+    renderSubtreeIntoContainer(this, <Card parentEl={parentEl} {...other}/>, node)
+
+    if (node && props.active && !this.state.onAfterOpen) {
+        this.props.onAfterOpen(node.querySelector('div').getBoundingClientRect().height)
+
+        this.setState({
+          onAfterOpen : true
+        })
+    }
   }
+
   shouldComponentUpdate() {
     return false
   }

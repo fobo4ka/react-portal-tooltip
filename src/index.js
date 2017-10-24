@@ -347,10 +347,10 @@ export default class ToolTip extends React.Component {
       this.handleRootRef = (root) => {
         if (root !== this.root) {
           if (this.root) {
-            // this.root.removeEventListener('click', this.handleInClick);
+            this.root.removeEventListener('click', this.handleInClick);
           }
           if (root) {
-            // root.addEventListener('click', this.handleInClick, true);
+            root.addEventListener('click', this.handleInClick, true);
             // props.scrollHide && root.addEventListener('scroll', this.props.closeFunc, true);
           }
         }
@@ -364,7 +364,6 @@ export default class ToolTip extends React.Component {
 
       this.handleOutClick = (event) => {
         const parentEL = document.querySelector(this.props.parent);
-        // console.log(this.isInClick, event.target !== parentEL, parentEL, parentEL.contains(event.target))
         const isOutClick = !this.isInClick && event.target !== parentEL;
         this.isInClick = false;
 
@@ -376,6 +375,12 @@ export default class ToolTip extends React.Component {
         }
       }
       document.addEventListener('click', this.handleOutClick, true);
+      this.handleScroll = (e) => {
+        if (!this.props.active) return
+        !this.ignoreScroll && this.props.closeFunc()
+        this.ignoreScroll = false
+      }
+      document.addEventListener('scroll', this.handleScroll);
       // props.scrollHide && document.addEventListener('scroll', this.props.closeFunc, true);
     }
   }
@@ -413,10 +418,11 @@ export default class ToolTip extends React.Component {
 
     if (canUseDOM) {
       if (this.root) {
-        // this.root.removeEventListener('click', this.handleInClick);
+        this.root.removeEventListener('click', this.handleInClick);
         // this.root.removeEventListener('scroll', this.props.closeFunc);
       }
       document.removeEventListener('click', this.handleOutClick);
+      document.removeEventListener('scroll', this.handleScroll);
       // document.removeEventListener('scroll', this.props.closeFunc);
     }
   }
@@ -438,7 +444,9 @@ export default class ToolTip extends React.Component {
     }
   }
   renderPortal(props) {
+    let render = true
     if (!portalNodes[this.props.group]) {
+      render = false
       this.createPortal()
     }
     let {parent, ...other} = props
@@ -447,8 +455,12 @@ export default class ToolTip extends React.Component {
     let parentEl = document.querySelector(parent)
     renderSubtreeIntoContainer(this, <Card parentEl={document.querySelector(parent)} {...other}/>, portalNodes[this.props.group].node)
 
-    if (node && props.active ) {
-	    onAfterOpen && onAfterOpen(node.querySelector('div').getBoundingClientRect().height)
+    if (!this.props.active && props.active && node) {
+      this.ignoreScroll = true;
+      setTimeout (() => {
+  	    onAfterOpen && onAfterOpen(node.querySelector('div').getBoundingClientRect().top);
+      }, 0)
+  //    this.ignoreScroll = false;
     }
   }
 

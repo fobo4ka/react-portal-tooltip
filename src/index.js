@@ -23,7 +23,8 @@ class Card extends React.Component {
     ]),
     style: PropTypes.object,
     closeFunc: PropTypes.func,
-    fullWidth: PropTypes.bool
+    fullWidth: PropTypes.bool,
+    portalParent: PropTypes.string
   }
   static defaultProps = {
     active: false,
@@ -72,6 +73,8 @@ class Card extends React.Component {
     }
   }
   getArrowStyle() {
+    const { parentEl, fullWidth } = this.props
+    const parentPosition = parentEl.getBoundingClientRect()
     let fgStyle = this.getBaseArrowStyle()
     let bgStyle = this.getBaseArrowStyle()
     fgStyle.zIndex = 60
@@ -101,15 +104,15 @@ class Card extends React.Component {
       bgStyle.marginTop = -8
 
       if (position === 'left') {
-        fgStyle.right = -15
+        fgStyle.right = -10
         fgStyle.borderLeft = fgColorBorder
-        bgStyle.right = -16
+        bgStyle.right = -11
         bgStyle.borderLeft = bgColorBorder
       }
       else {
-        fgStyle.left = -15
+        fgStyle.left = -10
         fgStyle.borderRight = fgColorBorder
-        bgStyle.left = -16
+        bgStyle.left = -11
         bgStyle.borderRight = bgColorBorder
       }
 
@@ -126,24 +129,24 @@ class Card extends React.Component {
     }
     else {
       fgStyle.left = '50%'
-      fgStyle.marginLeft = -15
+      fgStyle.marginLeft = -10
       fgStyle.borderLeft = fgTransBorder
       fgStyle.borderRight = fgTransBorder
       bgStyle.left = '50%'
-      bgStyle.marginLeft = -16
+      bgStyle.marginLeft = -11
       bgStyle.borderLeft = bgTransBorder
       bgStyle.borderRight = bgTransBorder
 
       if (position === 'top') {
-        fgStyle.bottom = -15
+        fgStyle.bottom = -10
         fgStyle.borderTop = fgColorBorder
-        bgStyle.bottom = -16
+        bgStyle.bottom = -11
         bgStyle.borderTop = bgColorBorder
       }
       else {
-        fgStyle.top = -15
+        fgStyle.top = -10
         fgStyle.borderBottom = fgColorBorder
-        bgStyle.top = -16
+        bgStyle.top = -11
         bgStyle.borderBottom = bgColorBorder
       }
 
@@ -160,6 +163,15 @@ class Card extends React.Component {
         fgStyle.marginLeft = 0
         bgStyle.left = this.margin - fgSize
         bgStyle.marginLeft = 0
+      }
+
+      if (fullWidth && (arrow === 'right' || arrow === 'left')) {
+	      fgStyle.left = parentPosition.x + parentPosition.width/2 + fgSize/2 - this.margin
+	      fgStyle.marginLeft = -10
+	      fgStyle.right = null
+	      bgStyle.left = fgStyle.left
+	      bgStyle.marginLeft = -11
+	      bgStyle.right = null
       }
     }
 
@@ -180,10 +192,17 @@ class Card extends React.Component {
     return style
   }
   getStyle(position, arrow) {
-    let parent = this.props.parentEl
-    let tooltipPosition = parent.getBoundingClientRect()
+    const { portalParent, parentEl } = this.props
+    const customPortalParent = portalParent && document.querySelector(portalParent)
+    let tooltipPosition = parentEl.getBoundingClientRect()
+
     let scrollY = (window.scrollY !== undefined) ? window.scrollY : window.pageYOffset
     let scrollX = (window.scrollX !== undefined) ? window.scrollX : window.pageXOffset
+    if (customPortalParent) {
+      scrollX = customPortalParent.scrollLeft
+      scrollY = customPortalParent.scrollTop
+    }
+
     let top = scrollY + tooltipPosition.top
     let left = scrollX + tooltipPosition.left
     let right = window.innerWidth - tooltipPosition.right + scrollX
@@ -191,36 +210,36 @@ class Card extends React.Component {
 
     const stylesFromPosition = {
       left: () => {
-        style.top = top + parent.offsetHeight / 2 - this.state.height / 2
+        style.top = top + parentEl.offsetHeight / 2 - this.state.height / 2
         style.left = left - this.state.width - this.margin
       },
       right: () => {
-        style.top = top + parent.offsetHeight / 2 - this.state.height / 2
-        style.left = left + parent.offsetWidth + this.margin
+        style.top = top + parentEl.offsetHeight / 2 - this.state.height / 2
+        style.left = left + parentEl.offsetWidth + this.margin
       },
       top: () => {
-        style.left = left - this.state.width / 2 + parent.offsetWidth / 2
+        style.left = left - this.state.width / 2 + parentEl.offsetWidth / 2
         style.right = right - this.margin
         style.top = top - this.state.height - this.margin
       },
       bottom: () => {
-        style.left = left - this.state.width / 2 + parent.offsetWidth / 2
-        style.top = top + parent.offsetHeight + this.margin
+        style.left = left - this.state.width / 2 + parentEl.offsetWidth / 2
+        style.top = top + parentEl.offsetHeight + this.margin
       },
     }
 
     const stylesFromArrow = {
       left: () => {
-        style.left = left + parent.offsetWidth / 2 - this.margin
+        style.left = left + parentEl.offsetWidth / 2 - this.margin
       },
       right: () => {
-        style.left = left - this.state.width + parent.offsetWidth / 2 + this.margin
+        style.left = left - this.state.width + parentEl.offsetWidth / 2 + this.margin
       },
       top: () => {
-        style.top = top + parent.offsetHeight / 2 - this.margin
+        style.top = top + parentEl.offsetHeight / 2 - this.margin
       },
       bottom: () => {
-        style.top = top + parent.offsetHeight / 2 - this.state.height + this.margin
+        style.top = top + parentEl.offsetHeight / 2 - this.state.height + this.margin
       },
     }
 
@@ -303,6 +322,7 @@ var portalNodes = {}
 export default class ToolTip extends React.Component {
   static propTypes = {
     parent: PropTypes.string.isRequired,
+    portalParent: PropTypes.string,
     active: PropTypes.bool,
     group: PropTypes.string,
     tooltipTimeout: PropTypes.number,
@@ -315,11 +335,8 @@ export default class ToolTip extends React.Component {
     active: false,
     group: 'main',
     tooltipTimeout: 500,
-    fullWidth: false
-  }
-
-  state = {
-    onAfterOpen: false
+    fullWidth: false,
+    portalParent: ''
   }
 
   constructor(props, context) {
@@ -330,11 +347,11 @@ export default class ToolTip extends React.Component {
       this.handleRootRef = (root) => {
         if (root !== this.root) {
           if (this.root) {
-            this.root.removeEventListener('click', this.handleInClick);
+            // this.root.removeEventListener('click', this.handleInClick);
           }
           if (root) {
-            root.addEventListener('click', this.handleInClick, true);
-            props.scrollHide && root.addEventListener('scroll', this.props.closeFunc, true);
+            // root.addEventListener('click', this.handleInClick, true);
+            // props.scrollHide && root.addEventListener('scroll', this.props.closeFunc, true);
           }
         }
         this.root = root;
@@ -346,20 +363,20 @@ export default class ToolTip extends React.Component {
        }
 
       this.handleOutClick = (event) => {
-        const isOutClick = !this.isInClick && event.target !== document.querySelector(this.props.parent);
+        const parentEL = document.querySelector(this.props.parent);
+        // console.log(this.isInClick, event.target !== parentEL, parentEL, parentEL.contains(event.target))
+        const isOutClick = !this.isInClick && event.target !== parentEL;
         this.isInClick = false;
 
 
-        const { closeFunc } = this.props;
+        const { closeFunc, active } = this.props;
         if (isOutClick && typeof closeFunc === 'function') {
-          closeFunc();
-          this.setState({
-            onAfterOpen: false
-          })
+
+          active && closeFunc();
         }
       }
       document.addEventListener('click', this.handleOutClick, true);
-      props.scrollHide && document.addEventListener('scroll', this.props.closeFunc, true);
+      // props.scrollHide && document.addEventListener('scroll', this.props.closeFunc, true);
     }
   }
 
@@ -396,38 +413,42 @@ export default class ToolTip extends React.Component {
 
     if (canUseDOM) {
       if (this.root) {
-        this.root.removeEventListener('click', this.handleInClick);
-        this.root.removeEventListener('scroll', this.props.closeFunc);
+        // this.root.removeEventListener('click', this.handleInClick);
+        // this.root.removeEventListener('scroll', this.props.closeFunc);
       }
       document.removeEventListener('click', this.handleOutClick);
-      document.removeEventListener('scroll', this.props.closeFunc);
+      // document.removeEventListener('scroll', this.props.closeFunc);
     }
   }
 
   createPortal() {
+    const { portalParent } = this.props
+
     portalNodes[this.props.group] = {
       node: document.createElement('div'),
       timeout: false
     }
     portalNodes[this.props.group].node.className = 'ToolTipPortal'
     portalNodes[this.props.group].node.ref = this.handleRootRef
-    document.body.appendChild(portalNodes[this.props.group].node)
+
+    if (portalParent && document.querySelector(portalParent)) {
+	    document.querySelector(portalParent).appendChild(portalNodes[this.props.group].node)
+    } else {
+	    document.body.appendChild(portalNodes[this.props.group].node)
+    }
   }
   renderPortal(props) {
     if (!portalNodes[this.props.group]) {
       this.createPortal()
     }
     let {parent, ...other} = props
+    const { onAfterOpen } = this.props
     const node = portalNodes[this.props.group].node
     let parentEl = document.querySelector(parent)
     renderSubtreeIntoContainer(this, <Card parentEl={document.querySelector(parent)} {...other}/>, portalNodes[this.props.group].node)
 
-    if (node && props.active && !this.state.onAfterOpen) {
-	    this.props.onAfterOpen && this.props.onAfterOpen(node.querySelector('div').getBoundingClientRect().height)
-
-        this.setState({
-          onAfterOpen : true
-        })
+    if (node && props.active ) {
+	    onAfterOpen && onAfterOpen(node.querySelector('div').getBoundingClientRect().height)
     }
   }
 

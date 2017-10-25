@@ -322,6 +322,7 @@ class Card extends React.Component {
 var portalNodes = {}
 
 export default class ToolTip extends React.Component {
+<<<<<<< HEAD
 	static propTypes = {
 		parent: PropTypes.string.isRequired,
 		portalParent: PropTypes.string,
@@ -461,6 +462,158 @@ export default class ToolTip extends React.Component {
 	render() {
 		return null
 	}
+=======
+  static propTypes = {
+    parent: PropTypes.string.isRequired,
+    portalParent: PropTypes.string,
+    active: PropTypes.bool,
+    group: PropTypes.string,
+    tooltipTimeout: PropTypes.number,
+    closeFunc: PropTypes.func,
+    onAfterOpen: PropTypes.func,
+    scrollHide: PropTypes.bool,
+    fullWidth: PropTypes.bool
+  }
+  static defaultProps = {
+    active: false,
+    group: 'main',
+    tooltipTimeout: 500,
+    fullWidth: false,
+    portalParent: ''
+  }
+
+  constructor(props, context) {
+    super(props, context)
+
+    if (canUseDOM) {
+      this.root = null;
+      this.handleRootRef = (root) => {
+        if (root !== this.root) {
+          if (this.root) {
+            this.root.removeEventListener('click', this.handleInClick);
+          }
+          if (root) {
+            root.addEventListener('click', this.handleInClick, true);
+            // props.scrollHide && root.addEventListener('scroll', this.props.closeFunc, true);
+          }
+        }
+        this.root = root;
+      };
+
+      this.isInClick = false;
+      this.handleInClick = () => {
+         this.isInClick = true;
+       }
+
+      this.handleOutClick = (event) => {
+        const parentEL = document.querySelector(this.props.parent);
+        const isOutClick = !this.isInClick && event.target !== parentEL;
+        this.isInClick = false;
+
+
+        const { closeFunc, active } = this.props;
+        if (isOutClick && typeof closeFunc === 'function') {
+
+          active && closeFunc();
+        }
+      }
+      document.addEventListener('click', this.handleOutClick, true);
+      this.handleScroll = (e) => {
+        if (!this.props.active) return
+        !this.ignoreScroll && this.props.closeFunc()
+        this.ignoreScroll = false
+      }
+      document.addEventListener('scroll', this.handleScroll);
+      // props.scrollHide && document.addEventListener('scroll', this.props.closeFunc, true);
+    }
+  }
+
+  componentDidMount() {
+    if (!this.props.active) {
+      return
+    }
+
+    this.renderPortal(this.props)
+  }
+  componentWillReceiveProps(nextProps) {
+    if ((!portalNodes[this.props.group] && !nextProps.active) ||
+      (!this.props.active && !nextProps.active)) {
+      return
+    }
+
+    if (portalNodes[this.props.group] && portalNodes[this.props.group].timeout) {
+      clearTimeout(portalNodes[this.props.group].timeout)
+    }
+
+    if (this.props.active && !nextProps.active) {
+      portalNodes[this.props.group].timeout = setTimeout(() => {
+        this.renderPortal(nextProps)
+      }, this.props.tooltipTimeout)
+    } else {
+        this.renderPortal(nextProps)
+    }
+  }
+  componentWillUnmount() {
+    if (portalNodes[this.props.group]) {
+      ReactDOM.unmountComponentAtNode(portalNodes[this.props.group].node)
+      clearTimeout(portalNodes[this.props.group].timeout)
+    }
+
+    if (canUseDOM) {
+      if (this.root) {
+        this.root.removeEventListener('click', this.handleInClick);
+        // this.root.removeEventListener('scroll', this.props.closeFunc);
+      }
+      document.removeEventListener('click', this.handleOutClick);
+      document.removeEventListener('scroll', this.handleScroll);
+      // document.removeEventListener('scroll', this.props.closeFunc);
+    }
+  }
+
+  createPortal() {
+    const { portalParent } = this.props
+
+    portalNodes[this.props.group] = {
+      node: document.createElement('div'),
+      timeout: false
+    }
+    portalNodes[this.props.group].node.className = 'ToolTipPortal'
+    portalNodes[this.props.group].node.ref = this.handleRootRef
+
+    if (portalParent && document.querySelector(portalParent)) {
+	    document.querySelector(portalParent).appendChild(portalNodes[this.props.group].node)
+    } else {
+	    document.body.appendChild(portalNodes[this.props.group].node)
+    }
+  }
+  renderPortal(props) {
+    let render = true
+    if (!portalNodes[this.props.group]) {
+      render = false
+      this.createPortal()
+    }
+    let {parent, ...other} = props
+    const { onAfterOpen } = this.props
+    const node = portalNodes[this.props.group].node
+    let parentEl = document.querySelector(parent)
+    renderSubtreeIntoContainer(this, <Card parentEl={document.querySelector(parent)} {...other}/>, portalNodes[this.props.group].node)
+
+    if (!this.props.active && props.active && node) {
+      this.ignoreScroll = true;
+      setTimeout (() => {
+  	    onAfterOpen && onAfterOpen(node.querySelector('div').getBoundingClientRect().top);
+      }, 0)
+  //    this.ignoreScroll = false;
+    }
+  }
+
+  shouldComponentUpdate() {
+    return false
+  }
+  render() {
+    return null
+  }
+>>>>>>> abec703a67628c633556adecd827fc413e54bfb4
 }
 
 const executeFunctionIfExist = (object, key) => {

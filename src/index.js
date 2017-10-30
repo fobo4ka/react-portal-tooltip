@@ -52,6 +52,7 @@ class Card extends React.Component {
 		}
 
 		let style = {
+			display: this.state.hover || this.props.active ? 'block' : 'none',
 			position: 'absolute',
 			padding: '5px',
 			background: '#fff',
@@ -286,21 +287,25 @@ class Card extends React.Component {
 	handleMouseLeave() {
 		this.setState({hover: false})
 	}
+
 	componentDidMount() {
 		this.updateSize()
 	}
+
 	componentWillReceiveProps() {
 		this.setState({transition: this.state.hover || this.props.active ? 'all' : 'opacity'}, () => {
 			this.updateSize()
 		})
 	}
+
 	updateSize() {
 		let self = ReactDOM.findDOMNode(this)
 		this.setState({
-			width: self.offsetWidth,
-			height: self.offsetHeight
+			width: self && self.offsetWidth,
+			height: self && self.offsetHeight
 		})
 	}
+
 	render() {
 		let {style, arrowStyle} = this.checkWindowPosition(this.getGlobalStyle(), this.getArrowStyle())
 
@@ -318,8 +323,6 @@ class Card extends React.Component {
 		)
 	}
 }
-
-var portalNodes = {}
 
 export default class ToolTip extends React.Component {
 	static propTypes = {
@@ -345,6 +348,8 @@ export default class ToolTip extends React.Component {
 	constructor(props, context) {
 		super(props, context)
 
+		this.portalNodes = {}
+
 		if (canUseDOM) {
 			this.root = null;
 			this.handleRootRef = (root) => {
@@ -366,7 +371,7 @@ export default class ToolTip extends React.Component {
 
 			this.handleOutClick = (event) => {
 				const parentEL = document.querySelector(this.props.parent);
-				const isOutClick = !this.isInClick && event.target !== parentEL;
+				const isOutClick = !this.isInClick && event.target !== parentEL && (parentEL && !parentEL.contains(event.target));
 				this.isInClick = false;
 
 
@@ -388,64 +393,67 @@ export default class ToolTip extends React.Component {
 		this.renderPortal(this.props)
 	}
 	componentWillReceiveProps(nextProps) {
-		if ((!portalNodes[this.props.group] && !nextProps.active) ||
+		if ((!this.portalNodes[this.props.group] && !nextProps.active) ||
 			(!this.props.active && !nextProps.active)) {
 			return
 		}
 
-		if (portalNodes[this.props.group] && portalNodes[this.props.group].timeout) {
-			clearTimeout(portalNodes[this.props.group].timeout)
+		if (this.portalNodes[this.props.group] && this.portalNodes[this.props.group].timeout) {
+			clearTimeout(this.portalNodes[this.props.group].timeout)
 		}
 
 		if (this.props.active && !nextProps.active) {
-			portalNodes[this.props.group].timeout = setTimeout(() => {
+			this.portalNodes[this.props.group].timeout = setTimeout(() => {
 				this.renderPortal(nextProps)
 			}, this.props.tooltipTimeout)
 		} else {
 			this.renderPortal(nextProps)
 		}
 	}
+
 	componentWillUnmount() {
-		if (portalNodes[this.props.group]) {
-			ReactDOM.unmountComponentAtNode(portalNodes[this.props.group].node)
-			clearTimeout(portalNodes[this.props.group].timeout)
+		if (this.portalNodes[this.props.group]) {
+
+			ReactDOM.unmountComponentAtNode(this.portalNodes[this.props.group].node)
+			clearTimeout(this.portalNodes[this.props.group].timeout)
+			this.portalNodes = {}
 		}
 
 		if (canUseDOM) {
 			if (this.root) {
-				this.root.removeEventListener('click', this.handleInClick);
+				this.root.removeEventListener('click', this.handleInClick)
 			}
-			document.removeEventListener('click', this.handleOutClick);
+			document.removeEventListener('click', this.handleOutClick)
 		}
 	}
 
 	createPortal() {
 		const { portalParent } = this.props
 
-		portalNodes[this.props.group] = {
+		this.portalNodes[this.props.group] = {
 			node: document.createElement('div'),
 			timeout: false
 		}
-		portalNodes[this.props.group].node.className = 'ToolTipPortal'
-		portalNodes[this.props.group].node.ref = this.handleRootRef
+		this.portalNodes[this.props.group].node.className = 'ToolTipPortal'
+		this.portalNodes[this.props.group].node.ref = this.handleRootRef
 
 		if (portalParent && document.querySelector(portalParent)) {
-			document.querySelector(portalParent).appendChild(portalNodes[this.props.group].node)
+			document.querySelector(portalParent).appendChild(this.portalNodes[this.props.group].node)
 		} else {
-			document.body.appendChild(portalNodes[this.props.group].node)
+			document.body.appendChild(this.portalNodes[this.props.group].node)
 		}
 	}
 	renderPortal(props) {
 		let render = true
-		if (!portalNodes[this.props.group]) {
+		if (!this.portalNodes[this.props.group]) {
 			render = false
 			this.createPortal()
 		}
 		let {parent, ...other} = props
 		const { onAfterOpen } = this.props
-		const node = portalNodes[this.props.group].node
+		const node = this.portalNodes[this.props.group].node
 		let parentEl = document.querySelector(parent)
-		renderSubtreeIntoContainer(this, <Card parentEl={document.querySelector(parent)} {...other}/>, portalNodes[this.props.group].node)
+		renderSubtreeIntoContainer(this, <Card parentEl={document.querySelector(parent)} {...other}/>, this.portalNodes[this.props.group].node)
 
 		if (!this.props.active && props.active && node && onAfterOpen) {
 			this.ignoreScroll = true;

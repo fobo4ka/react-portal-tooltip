@@ -171,7 +171,8 @@ class Card extends React.Component {
 			}
 
 			if (fullWidth && (arrow === 'right' || arrow === 'left')) {
-				fgStyle.left = parentPosition.x + parentPosition.width/2 + fgSize/2 - this.margin
+				const parentPositionX = parentPosition.x || parentPosition.left
+				fgStyle.left = parentPositionX + parentPosition.width/2 + fgSize/2 - this.margin
 				fgStyle.marginLeft = -10
 				fgStyle.right = null
 				bgStyle.left = fgStyle.left

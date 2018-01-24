@@ -25,9 +25,7 @@ class Card extends React.Component {
 		closeFunc: PropTypes.func,
 		fullWidth: PropTypes.bool,
 		portalParent: PropTypes.string,
-		margin: PropTypes.number,
-		onMouseEnter: PropTypes.func,
-		onMouseLeave: PropTypes.func
+		margin: PropTypes.number
 	}
 	static defaultProps = {
 		active: false,
@@ -171,8 +169,7 @@ class Card extends React.Component {
 			}
 
 			if (fullWidth && (arrow === 'right' || arrow === 'left')) {
-				const parentPositionX = parentPosition.x || parentPosition.left
-				fgStyle.left = parentPositionX + parentPosition.width/2 + fgSize/2 - this.margin
+				fgStyle.left = parentPosition.x + parentPosition.width/2 + fgSize/2 - this.margin
 				fgStyle.marginLeft = -10
 				fgStyle.right = null
 				bgStyle.left = fgStyle.left
@@ -285,11 +282,9 @@ class Card extends React.Component {
 		return {style, arrowStyle}
 	}
 	handleMouseEnter() {
-		this.props.onMouseEnter && this.props.onMouseEnter()
 		this.props.active && this.setState({hover: true})
 	}
 	handleMouseLeave() {
-		this.props.onMouseLeave && this.props.onMouseLeave()
 		this.setState({hover: false})
 	}
 
@@ -297,7 +292,10 @@ class Card extends React.Component {
 		this.updateSize()
 	}
 
-	componentWillReceiveProps() {
+	componentWillReceiveProps(nextProps) {
+		if (this.margin !== nextProps.margin) {
+			this.margin = nextProps.margin
+		}
 		this.setState({transition: this.state.hover || this.props.active ? 'all' : 'opacity'}, () => {
 			this.updateSize()
 		})
@@ -340,9 +338,7 @@ export default class ToolTip extends React.Component {
 		onAfterOpen: PropTypes.func,
 		scrollHide: PropTypes.bool,
 		fullWidth: PropTypes.bool,
-		margin: PropTypes.number,
-		onMouseEnter: PropTypes.func,
-		onMouseLeave: PropTypes.func
+		margin: PropTypes.number
 	}
 	static defaultProps = {
 		active: false,

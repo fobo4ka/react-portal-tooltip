@@ -338,14 +338,16 @@ export default class ToolTip extends React.Component {
 		onAfterOpen: PropTypes.func,
 		scrollHide: PropTypes.bool,
 		fullWidth: PropTypes.bool,
-		margin: PropTypes.number
+		margin: PropTypes.number,
+		isCloseOnOutClick: PropTypes.bool
 	}
 	static defaultProps = {
 		active: false,
 		group: 'main',
 		tooltipTimeout: 500,
 		fullWidth: false,
-		portalParent: ''
+		portalParent: '',
+		isCloseOnOutClick: false
 	}
 
 	constructor(props, context) {
@@ -384,7 +386,7 @@ export default class ToolTip extends React.Component {
 					active && closeFunc();
 				}
 			}
-			document.addEventListener('click', this.handleOutClick, true);
+			props.isCloseOnOutClick && document.addEventListener('click', this.handleOutClick, true);
 		}
 	}
 

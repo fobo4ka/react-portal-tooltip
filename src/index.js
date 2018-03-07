@@ -25,7 +25,8 @@ class Card extends React.Component {
 		closeFunc: PropTypes.func,
 		fullWidth: PropTypes.bool,
 		portalParent: PropTypes.string,
-		margin: PropTypes.number
+		margin: PropTypes.number,
+		isDisableCloseOnHover: PropTypes.bool
 	}
 	static defaultProps = {
 		active: false,
@@ -33,7 +34,8 @@ class Card extends React.Component {
 		arrow: null,
 		style: {style: {}, arrowStyle: {}},
 		fullWidth: false,
-		margin: 15
+		margin: 15,
+		isDisableCloseOnHover: true
 	}
 	state = {
 		hover: false,
@@ -310,10 +312,11 @@ class Card extends React.Component {
 	}
 
 	render() {
+		const { isDisableCloseOnHover } = this.props
 		let {style, arrowStyle} = this.checkWindowPosition(this.getGlobalStyle(), this.getArrowStyle())
 
 		return (
-            <div style={style} onMouseEnter={this.handleMouseEnter.bind(this)} onMouseLeave={this.handleMouseLeave.bind(this)}>
+            <div style={style} onMouseEnter={isDisableCloseOnHover && this.handleMouseEnter.bind(this)} onMouseLeave={isDisableCloseOnHover && this.handleMouseLeave.bind(this)}>
 				{this.props.arrow ? (
                         <div>
                           <span style={arrowStyle.fgStyle}/>
@@ -347,7 +350,7 @@ export default class ToolTip extends React.Component {
 		tooltipTimeout: 500,
 		fullWidth: false,
 		portalParent: '',
-		isCloseOnOutClick: false
+		isCloseOnOutClick: true
 	}
 
 	constructor(props, context) {

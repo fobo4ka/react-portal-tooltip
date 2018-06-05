@@ -379,8 +379,9 @@ export default class ToolTip extends React.Component {
 
 			this.handleOutClick = (event) => {
 				const parentEL = document.querySelector(this.props.parent);
-				const isOutClick = !this.isInClick && event.target !== parentEL && (parentEL && !parentEL.contains(event.target));
-				this.isInClick = false;
+				const selfClick = event.target  === this.root || (this.root && this.root.contains(event.target));
+				const isOutClick = !selfClick&& event.target !== parentEL && (parentEL && !parentEL.contains(event.target));
+				this.isInClick = !selfClick;
 
 
 				const { closeFunc, active } = this.props;
@@ -443,7 +444,7 @@ export default class ToolTip extends React.Component {
 			timeout: false
 		}
 		this.portalNodes[this.props.group].node.className = 'ToolTipPortal'
-		this.portalNodes[this.props.group].node.ref = this.handleRootRef
+		this.handleRootRef(this.portalNodes[this.props.group].node)
 
 		if (portalParent && document.querySelector(portalParent)) {
 			document.querySelector(portalParent).appendChild(this.portalNodes[this.props.group].node)

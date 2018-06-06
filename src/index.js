@@ -385,7 +385,7 @@ export default class ToolTip extends React.Component {
 
 
 				const { closeFunc, active } = this.props;
-				if (isOutClick && typeof closeFunc === 'function' && this.root.hasChildNodes()) {
+				if (isOutClick && typeof closeFunc === 'function' && this.root && this.root.hasChildNodes()) {
 
 					active && closeFunc();
 				}

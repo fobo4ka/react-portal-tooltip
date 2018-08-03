@@ -204,8 +204,8 @@ class Card extends React.Component {
 		let scrollY = (window.scrollY !== undefined) ? window.scrollY : window.pageYOffset
 		let scrollX = (window.scrollX !== undefined) ? window.scrollX : window.pageXOffset
 		if (customPortalParent) {
-			scrollX = customPortalParent.scrollLeft - customPortalParent.getBoundingClientRect().x;
-			scrollY = customPortalParent.scrollTop - customPortalParent.getBoundingClientRect().y;
+			scrollX = customPortalParent.scrollLeft - customPortalParent.getBoundingClientRect().left;
+			scrollY = customPortalParent.scrollTop - customPortalParent.getBoundingClientRect().top;
 		}
 
 		let top = scrollY + tooltipPosition.top

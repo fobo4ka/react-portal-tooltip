@@ -143,15 +143,15 @@ class Card extends React.Component {
 			bgStyle.borderRight = bgTransBorder
 
 			if (position === 'top') {
-				fgStyle.bottom = -10
+				fgStyle.bottom = -9
 				fgStyle.borderTop = fgColorBorder
-				bgStyle.bottom = -11
+				bgStyle.bottom = -10
 				bgStyle.borderTop = bgColorBorder
 			}
 			else {
-				fgStyle.top = -10
+				fgStyle.top = -9
 				fgStyle.borderBottom = fgColorBorder
-				bgStyle.top = -11
+				bgStyle.top = -10
 				bgStyle.borderBottom = bgColorBorder
 			}
 

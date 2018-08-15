@@ -342,7 +342,8 @@ export default class ToolTip extends React.Component {
 		scrollHide: PropTypes.bool,
 		fullWidth: PropTypes.bool,
 		margin: PropTypes.number,
-		isCloseOnOutClick: PropTypes.bool
+		isCloseOnOutClick: PropTypes.bool,
+		isCloseOnOutClickFunc: PropTypes.func,
 	}
 	static defaultProps = {
 		active: false,
@@ -384,10 +385,13 @@ export default class ToolTip extends React.Component {
 				this.isInClick = !selfClick;
 
 
-				const { closeFunc, active } = this.props;
+				const { closeFunc, active, isCloseOnOutClickFunc } = this.props;
 				if (isOutClick && typeof closeFunc === 'function' && this.root && this.root.hasChildNodes()) {
 
-					active && closeFunc();
+					if (active) {
+						closeFunc && closeFunc();
+						isCloseOnOutClickFunc && isCloseOnOutClickFunc();
+					}
 				}
 			}
 			props.isCloseOnOutClick && document.addEventListener('click', this.handleOutClick, true);

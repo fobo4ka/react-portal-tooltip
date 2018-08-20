@@ -41,34 +41,35 @@ class Card extends React.Component {
 		hover: false,
 		transition: 'opacity',
 		width: 0,
-		height: 0
+		height: 0,
+		styles: this.checkWindowPosition(this.getGlobalStyle(props, false, 'opacity'), this.getArrowStyle(props))
 	}
 	margin = this.props.margin
 	defaultArrowStyle = {
 		color: '#fff',
 		borderColor: 'rgba(0,0,0,.4)'
 	}
-	getGlobalStyle() {
+	getGlobalStyle(props, hover, transition) {
 		if (!this.props.parentEl) {
 			return {display: 'none'}
 		}
 
 		let style = {
-			display: this.state.hover || this.props.active ? 'block' : 'none',
+			display: hover || props.active ? 'block' : 'none',
 			position: 'absolute',
 			padding: '5px',
 			background: '#fff',
 			boxShadow: '0 0 8px rgba(0,0,0,.3)',
 			borderRadius: '3px',
-			transition: `${this.state.transition} .3s ease-in-out, visibility .3s ease-in-out`,
-			opacity: this.state.hover || this.props.active ? 1 : 0,
-			visibility: this.state.hover || this.props.active ? 'visible' : 'hidden',
+			transition: `${transition} .3s ease-in-out, visibility .3s ease-in-out`,
+			opacity: hover || props.active ? 1 : 0,
+			visibility: hover || props.active ? 'visible' : 'hidden',
 			zIndex: 50
 		}
 
-		assign(style, this.getStyle(this.props.position, this.props.arrow))
+		assign(style, this.getStyle(props.position, props.arrow))
 
-		return this.mergeStyle(style, this.props.style.style)
+		return this.mergeStyle(style, props.style.style)
 	}
 	getBaseArrowStyle() {
 		return {
@@ -78,14 +79,14 @@ class Card extends React.Component {
 		}
 	}
 	getArrowStyle() {
-		const { parentEl, fullWidth } = this.props
+		const { parentEl, fullWidth } = props
 		const parentPosition = parentEl.getBoundingClientRect()
 		let fgStyle = this.getBaseArrowStyle()
 		let bgStyle = this.getBaseArrowStyle()
 		fgStyle.zIndex = 60
 		bgStyle.zIndex = 55
 
-		let arrowStyle = assign(this.defaultArrowStyle, this.props.style.arrowStyle)
+		let arrowStyle = assign(this.defaultArrowStyle, props.style.arrowStyle)
 		let bgBorderColor = arrowStyle.borderColor ? arrowStyle.borderColor : 'transparent'
 
 		let fgSize = 8
@@ -95,7 +96,7 @@ class Card extends React.Component {
 		let bgColorBorder = `11px solid ${bgBorderColor}`
 		let bgTransBorder = `${bgSize}px solid transparent`
 
-		let {position, arrow} = this.props
+		let {position, arrow} = props
 
 		if (position === 'left' || position === 'right') {
 			fgStyle.top = '50%'
@@ -180,7 +181,7 @@ class Card extends React.Component {
 			}
 		}
 
-		let {color, borderColor, ...propsArrowStyle} = this.props.style.arrowStyle
+		let {color, borderColor, ...propsArrowStyle} = props.style.arrowStyle
 
 		return {
 			fgStyle: this.mergeStyle(fgStyle, propsArrowStyle),
@@ -301,6 +302,13 @@ class Card extends React.Component {
 		this.setState({transition: this.state.hover || this.props.active ? 'all' : 'opacity'}, () => {
 			this.updateSize()
 		})
+
+		if (nextProps.style !== this.props.style) {
+			const { hover, transition } = this.state
+			this.setState({
+				styles: this.checkWindowPosition(this.getGlobalStyle(nextProps, hover, transition), this.getArrowStyle(nextProps))
+			})
+		}
 	}
 
 	updateSize() {
@@ -313,10 +321,10 @@ class Card extends React.Component {
 
 	render() {
 		const { isDisableCloseOnHover } = this.props
-		let {style, arrowStyle} = this.checkWindowPosition(this.getGlobalStyle(), this.getArrowStyle())
+		const { styles } = this.state
 
 		return (
-            <div style={style} onMouseEnter={isDisableCloseOnHover && this.handleMouseEnter.bind(this)} onMouseLeave={isDisableCloseOnHover && this.handleMouseLeave.bind(this)}>
+            <div style={styles} onMouseEnter={isDisableCloseOnHover && this.handleMouseEnter.bind(this)} onMouseLeave={isDisableCloseOnHover && this.handleMouseLeave.bind(this)}>
 				{this.props.arrow ? (
                         <div>
                           <span style={arrowStyle.fgStyle}/>

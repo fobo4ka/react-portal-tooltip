@@ -73,7 +73,7 @@ class Card extends React.Component {
 			zIndex: 50
 		}
 
-		assign(style, this.getStyle(props.position, props.arrow))
+		assign(style, this.getStyle(props.position, props.arrow, props.portalParent, props.parentEl))
 
 		return this.mergeStyle(style, props.style.style)
 	}
@@ -203,8 +203,7 @@ class Card extends React.Component {
 
 		return style
 	}
-	getStyle(position, arrow) {
-		const { portalParent, parentEl } = this.props
+	getStyle(position, arrow, portalParent, parentEl) {
 		const customPortalParent = portalParent && document.querySelector(portalParent)
 		let tooltipPosition = parentEl.getBoundingClientRect()
 

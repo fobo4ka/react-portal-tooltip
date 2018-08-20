@@ -37,20 +37,26 @@ class Card extends React.Component {
 		margin: 15,
 		isDisableCloseOnHover: true
 	}
-	state = {
-		hover: false,
-		transition: 'opacity',
-		width: 0,
-		height: 0,
-		styles: this.checkWindowPosition(this.getGlobalStyle(props, false, 'opacity'), this.getArrowStyle(props))
-	}
-	margin = this.props.margin
-	defaultArrowStyle = {
-		color: '#fff',
-		borderColor: 'rgba(0,0,0,.4)'
+
+	constructor(props) {
+		super(props)
+
+		this.margin = this.props.margin
+		this.defaultArrowStyle = {
+			color: '#fff',
+			borderColor: 'rgba(0,0,0,.4)'
+		}
+
+		this.state = {
+			hover: false,
+			transition: 'opacity',
+			width: 0,
+			height: 0,
+			styles: this.checkWindowPosition(this.getGlobalStyle(props, false, 'opacity'), this.getArrowStyle(props))
+		}
 	}
 	getGlobalStyle(props, hover, transition) {
-		if (!this.props.parentEl) {
+		if (!props.parentEl) {
 			return {display: 'none'}
 		}
 
